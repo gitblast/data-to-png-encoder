@@ -24,7 +24,7 @@ export const padAlpha = (
 
   // ceil to nearest 4 and add 4 since we are using alpha byte as stop byte
   const neededBytes = Math.ceil((length * (4 / 3)) / 4) * 4 + 4;
-  const offset = neededBytes - Math.ceil(length * (4 / 3));
+  const offset = neededBytes - 4 - Math.ceil(length * (4 / 3));
 
   let paddedArrIndex = 0;
   let unpaddedArrIndex = 0;
@@ -33,12 +33,13 @@ export const padAlpha = (
     paddedArr[paddedArrIndex++] = unpaddedArr[unpaddedArrIndex++];
     paddedArr[paddedArrIndex++] = unpaddedArr[unpaddedArrIndex++];
     paddedArr[paddedArrIndex++] = unpaddedArr[unpaddedArrIndex++];
-    paddedArr[paddedArrIndex++] = 255;
 
-    if (paddedArrIndex >= neededBytes) {
-      paddedArr[paddedArrIndex + 3] = offset; // save offset to serve as stop byte
+    if (paddedArrIndex >= neededBytes - 1) {
+      paddedArr[paddedArrIndex] = offset; // save offset to serve as stop byte
 
       break;
+    } else {
+      paddedArr[paddedArrIndex++] = 255;
     }
   }
 
@@ -82,7 +83,7 @@ export const unPadAlpha = (
   const offsetInBytes = paddedArr[stopByteIndex];
 
   const lastRelevantByteIndex =
-    Math.floor((stopByteIndex * 3) / 4) - offsetInBytes;
+    Math.ceil((stopByteIndex * 3) / 4) - 4 - offsetInBytes;
 
   const lengthCorrected = unpadded.subarray(0, lastRelevantByteIndex + 1);
 
@@ -116,13 +117,13 @@ export const uint8arrToPng = (packedArr: Uint8ClampedArray, config: Config) => {
   fs.writeFileSync(join("build", FILENAME), buffer);
 };
 
-export const pngToUint8arr = async (config: Config) => {
-  const { DIMENSION_X, DIMENSION_Y, FILENAME } = config;
+export const pngToUint8arr = async (path: string, config: Config) => {
+  const { DIMENSION_X, DIMENSION_Y } = config;
 
   const canvas = createCanvas(DIMENSION_X, DIMENSION_Y);
   const context = canvas.getContext("2d");
 
-  const img = await loadImage(join("build", FILENAME));
+  const img = await loadImage(path);
 
   context.drawImage(img, 0, 0);
 

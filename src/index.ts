@@ -1,6 +1,6 @@
 import { parseArgs } from "util";
 import { pngToUint8arr, uint8arrToPng } from "./canvas";
-import { checkBuffersMatch, packBuffer } from "./lib";
+import { packBuffer } from "./lib";
 import fs from "fs";
 
 const { values } = parseArgs({
@@ -14,6 +14,10 @@ const { values } = parseArgs({
     file: {
       type: "string",
       short: "f",
+    },
+    decode: {
+      type: "boolean",
+      short: "d",
     },
     output: {
       type: "string",
@@ -40,33 +44,35 @@ const config = {
 
 export type Config = typeof config;
 
+const pack = async (path: string) => {
+  console.log("Pixel total: " + PIXEL_TOTAL);
+  console.log("Bytes total: " + PIXEL_TOTAL * 4);
+  console.log("Packed bytes capacity: " + BYTES_CAPACITY);
+
+  const buffer = fs.readFileSync(path);
+
+  const packed = packBuffer(buffer, config);
+
+  uint8arrToPng(packed, config);
+};
+
+const unpack = async (path: string) => {
+  const arr = await pngToUint8arr(path, config);
+
+  const unpackedBuffer = Buffer.from(arr).subarray(0, arr.length);
+
+  fs.writeFileSync(config.FILENAME, unpackedBuffer);
+};
+
 const main = async () => {
   if (!values.file) {
     throw new Error("No file specified");
   }
 
-  console.log("Pixel total: " + PIXEL_TOTAL);
-  console.log("Bytes total: " + PIXEL_TOTAL * 4);
-  console.log("Packed bytes capacity: " + BYTES_CAPACITY);
-
-  const buffer = fs.readFileSync(values.file);
-
-  const packed = packBuffer(buffer, config);
-
-  uint8arrToPng(packed, config);
-
-  const arr = await pngToUint8arr(config);
-
-  const unpackedBuffer = Buffer.from(arr).subarray(0, buffer.length);
-
-  if (!checkBuffersMatch(buffer, unpackedBuffer)) {
-    throw new Error("Buffers do not match");
+  if (values.decode) {
+    unpack(values.file);
   } else {
-    console.log("Buffers match");
-  }
-
-  if (values.output) {
-    fs.writeFileSync(values.output, unpackedBuffer);
+    pack(values.file);
   }
 
   console.log("Done");
