@@ -6,6 +6,7 @@
   "configurations": [
     {
       "type": "node",
+      "args": ["-f", "test-data/dummy.json"],
       "request": "launch",
       "name": "Launch Program",
       "skipFiles": ["<node_internals>/**"],

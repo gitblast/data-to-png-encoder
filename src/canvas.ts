@@ -1,11 +1,10 @@
 import { createCanvas, createImageData, loadImage } from "canvas";
-import {
-  BYTES_CAPACITY,
-  DIMENSION_X,
-  DIMENSION_Y,
-  TOTAL_BYTES,
-} from "./consts";
+
 import fs from "fs";
+import { join } from "path";
+import { Config } from ".";
+
+// 1111 1001 0000
 
 /**
  * Sets every 4th byte 255. This is due to alpha premultiplication causing loss of data.
@@ -15,14 +14,17 @@ import fs from "fs";
  * @param unpaddedArr
  * @returns
  */
-export const padAlpha = (unpaddedArr: Uint8ClampedArray) => {
+export const padAlpha = (
+  unpaddedArr: Uint8ClampedArray,
+  { TOTAL_BYTES }: Config
+) => {
   const paddedArr = new Uint8ClampedArray(TOTAL_BYTES);
 
   const length = unpaddedArr.length;
 
-  const neededBytes = Math.ceil(length * (4 / 3));
-
-  const offset = neededBytes - length;
+  // ceil to nearest 4 and add 4 since we are using alpha byte as stop byte
+  const neededBytes = Math.ceil((length * (4 / 3)) / 4) * 4 + 4;
+  const offset = neededBytes - Math.ceil(length * (4 / 3));
 
   let paddedArrIndex = 0;
   let unpaddedArrIndex = 0;
@@ -48,7 +50,10 @@ export const padAlpha = (unpaddedArr: Uint8ClampedArray) => {
  * @param paddedArr
  * @returns
  */
-export const unPadAlpha = (paddedArr: Uint8ClampedArray) => {
+export const unPadAlpha = (
+  paddedArr: Uint8ClampedArray,
+  { BYTES_CAPACITY }: Config
+) => {
   const unpadded = new Uint8ClampedArray(BYTES_CAPACITY);
 
   let unpaddedArrIndex = 0;
@@ -84,8 +89,10 @@ export const unPadAlpha = (paddedArr: Uint8ClampedArray) => {
   return lengthCorrected;
 };
 
-export const uint8arrToPng = (packedArr: Uint8ClampedArray) => {
-  const arr = padAlpha(packedArr);
+export const uint8arrToPng = (packedArr: Uint8ClampedArray, config: Config) => {
+  const arr = padAlpha(packedArr, config);
+
+  const { DIMENSION_X, DIMENSION_Y, FILENAME } = config;
 
   const canvas = createCanvas(DIMENSION_X, DIMENSION_Y);
 
@@ -106,14 +113,16 @@ export const uint8arrToPng = (packedArr: Uint8ClampedArray) => {
     filters: canvas.PNG_FILTER_NONE,
   });
 
-  fs.writeFileSync("./image.png", buffer);
+  fs.writeFileSync(join("build", FILENAME), buffer);
 };
 
-export const pngToUint8arr = async () => {
+export const pngToUint8arr = async (config: Config) => {
+  const { DIMENSION_X, DIMENSION_Y, FILENAME } = config;
+
   const canvas = createCanvas(DIMENSION_X, DIMENSION_Y);
   const context = canvas.getContext("2d");
 
-  const img = await loadImage("./image.png");
+  const img = await loadImage(join("build", FILENAME));
 
   context.drawImage(img, 0, 0);
 
@@ -121,15 +130,5 @@ export const pngToUint8arr = async () => {
 
   const arr = imageData.data;
 
-  return unPadAlpha(arr);
-};
-
-export const uint8arrToBuff = (arr: Uint8ClampedArray) => {
-  fs.writeFileSync("./image.buff", arr);
-};
-
-export const buffToUint8arr = async () => {
-  const buff = fs.readFileSync("./image.buff");
-
-  return new Uint8ClampedArray(buff);
+  return unPadAlpha(arr, config);
 };

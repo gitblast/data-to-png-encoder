@@ -1,4 +1,4 @@
-import { BYTES_CAPACITY } from "./consts";
+import { Config } from ".";
 
 export const getBuffer = (keys: number) => {
   const object: Record<string, number> = {};
@@ -14,7 +14,7 @@ export const getBuffer = (keys: number) => {
   return buffer;
 };
 
-export const packBuffer = (buffer: Buffer) => {
+export const packBuffer = (buffer: Buffer, { BYTES_CAPACITY }: Config) => {
   const length = buffer.length;
 
   if (length > BYTES_CAPACITY) {
@@ -45,13 +45,3 @@ export const checkBuffersMatch = (buff1: Buffer, buff2: Buffer) => {
 
   return true;
 };
-
-// const getLengthBytes = () => {
-//   let lengthBytes = 0;
-
-//   while (1 << (lengthBytes * 8) < BYTES_CAPACITY) {
-//     lengthBytes++;
-//   }
-
-//   return lengthBytes;
-// };
