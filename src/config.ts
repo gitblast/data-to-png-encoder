@@ -10,10 +10,10 @@ const { values, positionals } = parseArgs({
       type: "boolean",
       short: "c",
     },
-    x: {
+    width: {
       type: "string",
     },
-    y: {
+    height: {
       type: "string",
     },
     decode: {
@@ -31,10 +31,10 @@ if (positionals.length !== 1) {
 const EXT = ".packed.png";
 const FILEPATH = positionals[0];
 const FILENAME = FILEPATH.split("/").pop() || `untitled_${Date.now()}`;
-const OUTPUT_FILENAME = `${FILENAME}_${Date.now()}${EXT}`;
-const DIMENSION_X = Number(values.x || 854);
-const DIMENSION_Y = Number(values.y || 480);
-const PIXEL_TOTAL = DIMENSION_X * DIMENSION_Y;
+const OUTPUT_FILENAME = `${FILENAME}${EXT}`;
+const WIDTH = Number(values.width || 854);
+const HEIGHT = Number(values.height || 480);
+const PIXEL_TOTAL = WIDTH * HEIGHT;
 const TOTAL_BYTES = PIXEL_TOTAL * 4;
 const BYTES_CAPACITY = PIXEL_TOTAL * 3 - 1;
 
@@ -42,8 +42,8 @@ const config = {
   FILEPATH,
   FILENAME,
   EXT,
-  DIMENSION_X,
-  DIMENSION_Y,
+  WIDTH,
+  HEIGHT,
   PIXEL_TOTAL,
   TOTAL_BYTES,
   BYTES_CAPACITY,

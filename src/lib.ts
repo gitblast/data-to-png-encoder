@@ -58,14 +58,8 @@ export const unpack = async (path: string, config: Config) => {
  * @returns
  */
 export const padAlpha = (unpaddedArr: Uint8ClampedArray, config: Config) => {
-  const {
-    DIMENSION_X,
-    DIMENSION_Y,
-    BYTES_CAPACITY,
-    TOTAL_BYTES,
-    PIXEL_TOTAL,
-    values,
-  } = config;
+  const { WIDTH, HEIGHT, BYTES_CAPACITY, TOTAL_BYTES, PIXEL_TOTAL, values } =
+    config;
 
   const paddedArr = new Uint8ClampedArray(TOTAL_BYTES);
 
@@ -75,8 +69,8 @@ export const padAlpha = (unpaddedArr: Uint8ClampedArray, config: Config) => {
   const neededBytes = Math.ceil((length * (4 / 3)) / 4) * 4 + 4;
 
   if (values.verbose) {
-    console.log("Image width: " + DIMENSION_X);
-    console.log("Image height: " + DIMENSION_Y);
+    console.log("Image width: " + WIDTH);
+    console.log("Image height: " + HEIGHT);
 
     console.log("Pixel total: " + PIXEL_TOTAL);
     console.log("Bytes total: " + PIXEL_TOTAL * 4);
@@ -168,13 +162,13 @@ export const unPadAlpha = (
  * @returns
  */
 export const uint8arrToPng = (arr: Uint8ClampedArray, config: Config) => {
-  const { DIMENSION_X, DIMENSION_Y, OUTPUT_FILENAME } = config;
+  const { WIDTH, HEIGHT, OUTPUT_FILENAME } = config;
 
-  const canvas = createCanvas(DIMENSION_X, DIMENSION_Y);
+  const canvas = createCanvas(WIDTH, HEIGHT);
 
   const context = canvas.getContext("2d");
 
-  const imageData = createImageData(arr, DIMENSION_X, DIMENSION_Y);
+  const imageData = createImageData(arr, WIDTH, HEIGHT);
 
   imageData.data.set(arr);
 
@@ -185,6 +179,10 @@ export const uint8arrToPng = (arr: Uint8ClampedArray, config: Config) => {
     filters: canvas.PNG_FILTER_NONE,
   });
 
+  if (!fs.existsSync("build")) {
+    fs.mkdirSync("build");
+  }
+
   const path = join("build", OUTPUT_FILENAME);
 
   fs.writeFileSync(path, buffer);
@@ -193,16 +191,16 @@ export const uint8arrToPng = (arr: Uint8ClampedArray, config: Config) => {
 };
 
 export const pngToUint8arr = async (path: string, config: Config) => {
-  const { DIMENSION_X, DIMENSION_Y } = config;
+  const { WIDTH, HEIGHT } = config;
 
-  const canvas = createCanvas(DIMENSION_X, DIMENSION_Y);
+  const canvas = createCanvas(WIDTH, HEIGHT);
   const context = canvas.getContext("2d");
 
   const img = await loadImage(path);
 
   context.drawImage(img, 0, 0);
 
-  const imageData = context.getImageData(0, 0, DIMENSION_X, DIMENSION_Y);
+  const imageData = context.getImageData(0, 0, WIDTH, HEIGHT);
 
   const paddedArr = imageData.data;
 
