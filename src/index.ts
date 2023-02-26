@@ -1,32 +1,46 @@
+import { join } from "path";
 import { parseArgs } from "util";
-import { pngToUint8arr, uint8arrToPng } from "./canvas";
-import { packBuffer } from "./lib";
-import fs from "fs";
+import {
+  checkBuffersMatch,
+  pack,
+  readBuffer,
+  uint8arrToPng,
+  unpack,
+  writeBuffer,
+} from "./lib";
 
-const { values } = parseArgs({
+const { values, positionals } = parseArgs({
   options: {
+    verbose: {
+      type: "boolean",
+      short: "v",
+    },
+    check: {
+      type: "boolean",
+      short: "c",
+    },
     x: {
       type: "string",
     },
     y: {
       type: "string",
     },
-    file: {
-      type: "string",
-      short: "f",
-    },
     decode: {
       type: "boolean",
       short: "d",
     },
-    output: {
-      type: "string",
-      short: "o",
-    },
   },
+  allowPositionals: true,
 });
 
-const FILENAME = values.output || `packed_${Date.now()}.png`;
+if (positionals.length !== 1) {
+  throw new Error("Must provide a file path");
+}
+
+const EXT = ".packed.png";
+const FILEPATH = positionals[0];
+const FILENAME = FILEPATH.split("/").pop() || `untitled_${Date.now()}`;
+const OUTPUT_FILENAME = `${FILENAME}_${Date.now()}${EXT}`;
 const DIMENSION_X = Number(values.x || 854);
 const DIMENSION_Y = Number(values.y || 480);
 const PIXEL_TOTAL = DIMENSION_X * DIMENSION_Y;
@@ -34,48 +48,48 @@ const TOTAL_BYTES = PIXEL_TOTAL * 4;
 const BYTES_CAPACITY = PIXEL_TOTAL * 3;
 
 const config = {
+  FILEPATH,
   DIMENSION_X,
   DIMENSION_Y,
   PIXEL_TOTAL,
   TOTAL_BYTES,
   BYTES_CAPACITY,
-  FILENAME,
+  OUTPUT_FILENAME,
+  VERBOSE: values.verbose,
 };
 
 export type Config = typeof config;
 
-const pack = async (path: string) => {
-  console.log("Pixel total: " + PIXEL_TOTAL);
-  console.log("Bytes total: " + PIXEL_TOTAL * 4);
-  console.log("Packed bytes capacity: " + BYTES_CAPACITY);
-
-  const buffer = fs.readFileSync(path);
-
-  const packed = packBuffer(buffer, config);
-
-  uint8arrToPng(packed, config);
-};
-
-const unpack = async (path: string) => {
-  const arr = await pngToUint8arr(path, config);
-
-  const unpackedBuffer = Buffer.from(arr).subarray(0, arr.length);
-
-  fs.writeFileSync(config.FILENAME, unpackedBuffer);
-};
-
 const main = async () => {
-  if (!values.file) {
-    throw new Error("No file specified");
-  }
-
   if (values.decode) {
-    unpack(values.file);
+    if (!FILEPATH.endsWith(EXT)) {
+      throw new Error(`File must end with ${EXT}`);
+    }
+
+    const unpacked = await unpack(FILEPATH, config);
+
+    const filename = `unpacked_${FILENAME.replace(EXT, "")}`;
+
+    writeBuffer(join("build", filename), unpacked);
   } else {
-    pack(values.file);
+    const buffer = readBuffer(FILEPATH);
+
+    const packed = pack(buffer, config);
+
+    const path = uint8arrToPng(packed, config);
+
+    if (values.check) {
+      const unpacked = await unpack(path, config);
+
+      if (checkBuffersMatch(buffer, unpacked)) {
+        console.log("Buffers match");
+      } else {
+        console.log("Buffers do not match");
+      }
+    }
   }
 
-  console.log("Done");
+  values.verbose && console.log("Done");
 };
 
 main();
