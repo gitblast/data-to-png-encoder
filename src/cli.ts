@@ -10,9 +10,15 @@ import {
   writeBuffer,
 } from "./lib";
 
+import fs from "fs";
+
 import config from "./config";
 
 const { FILEPATH, FILENAME, EXT, values } = config;
+
+if (!fs.existsSync("build")) {
+  fs.mkdirSync("build");
+}
 
 export const start = async () => {
   if (values.decode) {

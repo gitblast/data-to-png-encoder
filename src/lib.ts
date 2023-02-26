@@ -179,10 +179,6 @@ export const uint8arrToPng = (arr: Uint8ClampedArray, config: Config) => {
     filters: canvas.PNG_FILTER_NONE,
   });
 
-  if (!fs.existsSync("build")) {
-    fs.mkdirSync("build");
-  }
-
   const path = join("build", OUTPUT_FILENAME);
 
   fs.writeFileSync(path, buffer);
