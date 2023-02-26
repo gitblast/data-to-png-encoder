@@ -1,4 +1,4 @@
-# data-to-png-encoder
+# file-to-png-encoder
 
 _This project was created for fun, any real use case should probably use something else._
 
