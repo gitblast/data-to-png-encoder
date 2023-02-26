@@ -36,7 +36,7 @@ export const pack = (buffer: Buffer, config: Config) => {
 };
 
 export const unpack = async (path: string, config: Config) => {
-  const paddedArr = await pngToUint8arr(path, config);
+  const paddedArr = await pngToUint8arr(path);
 
   const unpadded = unPadAlpha(paddedArr, config);
 
@@ -190,17 +190,15 @@ export const uint8arrToPng = (arr: Uint8ClampedArray, config: Config) => {
   return path;
 };
 
-export const pngToUint8arr = async (path: string, config: Config) => {
-  const { WIDTH, HEIGHT } = config;
-
-  const canvas = createCanvas(WIDTH, HEIGHT);
-  const context = canvas.getContext("2d");
-
+export const pngToUint8arr = async (path: string) => {
   const img = await loadImage(path);
+
+  const canvas = createCanvas(img.width, img.height);
+  const context = canvas.getContext("2d");
 
   context.drawImage(img, 0, 0);
 
-  const imageData = context.getImageData(0, 0, WIDTH, HEIGHT);
+  const imageData = context.getImageData(0, 0, img.width, img.height);
 
   const paddedArr = imageData.data;
 
