@@ -1,4 +1,4 @@
-import { Config } from ".";
+import { Config } from "./config";
 import fs from "fs";
 import { createCanvas, createImageData, loadImage } from "canvas";
 import { join } from "path";
@@ -30,18 +30,6 @@ export const writeBuffer = (path: string, buffer: Buffer) => {
 };
 
 export const pack = (buffer: Buffer, config: Config) => {
-  const { BYTES_CAPACITY, PIXEL_TOTAL, VERBOSE } = config;
-
-  if (VERBOSE) {
-    console.log("Pixel total: " + PIXEL_TOTAL);
-    console.log("Bytes total: " + PIXEL_TOTAL * 4);
-    console.log("Packed bytes capacity: " + BYTES_CAPACITY);
-  }
-
-  if (buffer.length > BYTES_CAPACITY) {
-    throw new Error(`Buffer too large (${buffer.length} > ${BYTES_CAPACITY}))`);
-  }
-
   const uint8arr = new Uint8ClampedArray(buffer);
 
   return padAlpha(uint8arr, config);
@@ -69,16 +57,41 @@ export const unpack = async (path: string, config: Config) => {
  * @param unpaddedArr
  * @returns
  */
-export const padAlpha = (
-  unpaddedArr: Uint8ClampedArray,
-  { TOTAL_BYTES }: Config
-) => {
+export const padAlpha = (unpaddedArr: Uint8ClampedArray, config: Config) => {
+  const {
+    DIMENSION_X,
+    DIMENSION_Y,
+    BYTES_CAPACITY,
+    TOTAL_BYTES,
+    PIXEL_TOTAL,
+    values,
+  } = config;
+
   const paddedArr = new Uint8ClampedArray(TOTAL_BYTES);
 
   const length = unpaddedArr.length;
 
   // ceil to nearest 4 and add 4 since we are using alpha byte as stop byte
   const neededBytes = Math.ceil((length * (4 / 3)) / 4) * 4 + 4;
+
+  if (values.verbose) {
+    console.log("Image width: " + DIMENSION_X);
+    console.log("Image height: " + DIMENSION_Y);
+
+    console.log("Pixel total: " + PIXEL_TOTAL);
+    console.log("Bytes total: " + PIXEL_TOTAL * 4);
+
+    console.log("Input buffer length: " + unpaddedArr.length);
+    console.log("Needed bytes: " + neededBytes);
+    console.log("Packed bytes capacity: " + BYTES_CAPACITY);
+  }
+
+  if (unpaddedArr.length > BYTES_CAPACITY) {
+    throw new Error(
+      `Buffer too large (${unpaddedArr.length} > ${BYTES_CAPACITY}))`
+    );
+  }
+
   const offset = neededBytes - 4 - Math.ceil(length * (4 / 3));
 
   let paddedArrIndex = 0;
@@ -89,7 +102,7 @@ export const padAlpha = (
     paddedArr[paddedArrIndex++] = unpaddedArr[unpaddedArrIndex++];
     paddedArr[paddedArrIndex++] = unpaddedArr[unpaddedArrIndex++];
 
-    if (paddedArrIndex >= neededBytes - 1) {
+    if (paddedArrIndex === neededBytes - 1) {
       paddedArr[paddedArrIndex] = offset; // save offset to serve as stop byte
 
       break;

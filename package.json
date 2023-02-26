@@ -1,5 +1,5 @@
 {
-  "name": "node-typescript-skeleton",
+  "name": "data-to-png-encoder",
   "version": "1.0.0",
   "main": "index.ts",
   "license": "MIT",
@@ -12,11 +12,13 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
+    "postinstall": "tsc",
     "dev": "nodemon src/index.ts",
     "build": "tsc"
   },
   "dependencies": {
     "@types/node": "^18.14.1",
     "canvas": "^2.11.0"
-  }
+  },
+  "bin": "./dist/cli.js"
 }
